@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { Item } from './+page.server';
+	import { onMount } from 'svelte';
 
 	export let data: PageData;
 
-	let items = data.items;
+	let loading = true;
+	let items : Item[] | null = null;
 	let index = 0;
-	let item = items[0];
 
 	let guess: number | null = null;
 	let submitted = false;
@@ -25,11 +27,11 @@
 	let roundBracket = { text: "You're a disgrace!", color: 'red' };
 
 	const checkGuess = () => {
-		if (guess === null) {
+		if (guess === null || items === null) {
 			return;
 		}
 		submitted = true;
-		percentOff = Math.abs(((guess - item.price) / item.price) * 100);
+		percentOff = Math.abs(((guess - items[index].price) / items[index].price) * 100);
 		let key = Object.keys(roundBrackets).find((e) => {
 			return percentOff < +e;
 		});
@@ -47,26 +49,36 @@
 	};
 
 	const next = () => {
+		if (items === null) {
+			return;
+		}
+
 		index++;
 		if (index >= items.length) {
 			finished = true;
 			return;
 		}
-		item = items[index];
 		guess = null;
 		submitted = false;
 	};
+
+	onMount(async () => {
+		items = await data.streamed.items;
+		loading = false;
+	});
 </script>
 
 <main>
 	<h1>Tescool!</h1>
 	<p>Guess the price of the Tesco item</p>
 
-	{#if !finished}
+	{#if loading}
+		<p>Loading...</p>
+	{:else if !finished && items}
 		<div class="item-box">
 			<span>Score: {score.toFixed(0)}/5000</span>
-			<img src={item.defaultImageUrl} alt="Image of {item.title}" />
-			<span class="name">{item.title}</span>
+			<img src={items[index].defaultImageUrl} alt="Image of {items[index].title}" />
+			<span class="name">{items[index].title}</span>
 
 			<div class="guess">
 				<span>Guess: £</span>
@@ -96,7 +108,7 @@
 				<div class="actual" style="color: {submitted ? roundBracket.color : 'black'}">
 					<span>Actual price:</span>
 
-					<span class="price">{item.price.toFixed(2)}</span>
+					<span class="price">{items[index].price.toFixed(2)}</span>
 					<span>{percentOff.toFixed(0)}% off &mdash; {roundBracket.text}</span>
 				</div>
 			{/if}
@@ -105,7 +117,7 @@
 		<h2>Round complete!</h2>
 		<p>Your score is {score.toFixed(0)}/5000</p>
 
-        <button on:click={() => window.location.reload()}>Play again!</button>
+		<button on:click={() => window.location.reload()}>Play again!</button>
 	{/if}
 </main>
 
@@ -140,7 +152,8 @@
 		max-width: 100px;
 	}
 
-    input, button {
-        padding: 4px;
-    }
+	input,
+	button {
+		padding: 4px;
+	}
 </style>
