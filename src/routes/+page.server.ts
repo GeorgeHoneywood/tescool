@@ -5,11 +5,8 @@ function randomIntFromInterval(min: number, max: number) { // min and max includ
 
 export async function load({ params }) {
     const resp = await fetch("https://www.tesco.com/groceries/en-GB/resources", {
-
-        "credentials": "include",
         "headers": {
             "Accept": "application/json",
-            "Accept-Language": "en-GB,en;q=0.5",
             "content-type": "application/json",
             "x-csrf-token": "fkQYjp05-cqNoNNSA04MVNkl3Q4ZD4RVfCPw",
             "cookie": "_csrf=C4kyhDX5wl99qeq-5NBN2xyt"
@@ -26,13 +23,12 @@ export async function load({ params }) {
                     }
                 }
             ],
-            // "requiresAuthentication": false,
         }),
         "method": "POST",
-        "mode": "cors"
     });
 
     const data = await resp.json()
+    console.log({resp, data, fetch})
     const pageSize = data.productsByCategory.data.results.pageInformation.pageSize;
 
     const start = Math.min(
