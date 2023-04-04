@@ -28,7 +28,7 @@ export async function load({ params }) {
     });
 
     const data = await resp.json()
-    console.log({resp, data, fetch})
+    console.log({resp, data}, fetch)
     const pageSize = data.productsByCategory.data.results.pageInformation.pageSize;
 
     const start = Math.min(
