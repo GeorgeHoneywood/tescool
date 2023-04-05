@@ -28,7 +28,6 @@ export async function load() {
     async function getItems() {
         const now = new Date();
         const outdated = now.getDay() !== dataDate.getDay()
-        dataDate = new Date(); // FIXME: some sort of race condition here? (probably not important)
 
         if (data === null || outdated) {
             console.log("data is outdated, reloading");
@@ -81,6 +80,8 @@ export async function load() {
                     message: 'could not load data from tesco'
                 });
             }
+
+            dataDate = new Date(); // FIXME: some sort of race condition here? (probably not important)
         }
 
         // const pageSize = data.productsByCategory.data.results.pageInformation.pageSize;
