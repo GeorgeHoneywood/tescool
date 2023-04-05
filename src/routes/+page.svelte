@@ -15,6 +15,7 @@
 	let finished = false;
 
 	let score = 0;
+    let newHighscore = false;
 
 	let percentOff = 0;
 	let roundBracket = { text: '', color: 'black' };
@@ -54,6 +55,12 @@
 		index++;
 		if (index >= items.length) {
 			finished = true;
+
+            // do highscore stuff here
+            if (localStorage.getItem('highscore') === null || score > +localStorage.getItem('highscore')!){
+                localStorage.setItem('highscore', score.toFixed(0));
+                newHighscore = true;
+            }
 			return;
 		}
 		guess = null;
@@ -120,6 +127,12 @@
 	{:else}
 		<h2>Game complete!</h2>
 		<p>You scored {score.toFixed(0)}/5000</p>
+        
+        {#if newHighscore}
+            <p>New highscore!</p>
+        {:else}
+            <p>Highscore: {localStorage.getItem('highscore') ?? 0}</p>
+        {/if}
 
 		<button on:click={() => window.location.reload()}>Play again!</button>
 	{/if}
