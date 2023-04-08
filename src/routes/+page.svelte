@@ -113,6 +113,8 @@
 		finished = false;
 		submitted = false;
 		index = 0;
+		score = 0;
+		newHighscore = false;
 	}
 </script>
 
