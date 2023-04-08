@@ -186,6 +186,7 @@
 		{/if}
 
 		<button
+			class="new-game"
 			use:focus
 			disabled={loading}
 			on:click={() => {
@@ -285,5 +286,9 @@
 		text-align: center;
 		display: flex;
 		flex-direction: column;
+	}
+
+	.new-game {
+		margin-top: 15px;
 	}
 </style>
