@@ -5,6 +5,7 @@
 	import Spinner from '../components/Spinner.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { getTodayString } from '../util';
+	import { fade, slide } from 'svelte/transition';
 
 	export let data: PageData;
 
@@ -22,6 +23,8 @@
 
 	let percentOff = 0;
 	let roundBracket = { text: '', color: 'black' };
+
+	let newDayChecker = 0;
 
 	const roundBrackets: Record<number, { text: string; color: string }> = {
 		5: { text: 'Dead on!', color: 'green' },
@@ -76,23 +79,17 @@
 			}
 
 			// check if there is a new daily challenge every 2 seconds
-			setInterval(() => {
+			newDayChecker = setInterval(() => {
 				const challengeDate = localStorage.getItem('dailyChallengeDate');
-				console.log('challengeDate', challengeDate);
 
+				console.log('check!');
 				if (data.loadDate !== getTodayString()) {
 					console.log('the date has changed');
 					loading = true;
 					invalidateAll().then(async () => {
 						console.log('loaded new daily challenge');
 
-						const resp = await data.streamed.tesco;
-						items = resp.items;
-						type = resp.type;
-						loading = false;
-
-						finished = false;
-						index = 0;
+						await resetState();
 					});
 				}
 			}, 1000 * 2);
@@ -104,12 +101,19 @@
 	};
 
 	onMount(async () => {
+		await resetState();
+	});
+
+	async function resetState() {
 		const resp = await data.streamed.tesco;
 		items = resp.items;
 		type = resp.type;
-
 		loading = false;
-	});
+
+		finished = false;
+		submitted = false;
+		index = 0;
+	}
 </script>
 
 <main>
@@ -124,12 +128,13 @@
 			<span style="text-align:right">Score: {score.toFixed(0)}/5000</span>
 		</div>
 
-		<div class="item-box">
-			{#key items[index]}
+		{#key items[index]}
+			<div class="item-box" transition:slide|local>
 				<img src={items[index].defaultImageUrl} alt="Image of {items[index].title}" />
-			{/key}
-			<span class="name">{items[index].title}</span>
-		</div>
+
+				<span class="name">{items[index].title}</span>
+			</div>
+		{/key}
 
 		<div class="guess">
 			<span>
@@ -181,19 +186,18 @@
 			use:focus
 			disabled={loading}
 			on:click={() => {
+				// prevent auto reload if we are mid-game
+				if (newDayChecker !== 0) {
+					clearInterval(newDayChecker);
+				}
+
 				loading = true;
-				document.cookie = `dailyChallengeDate=${getTodayString()};`;
+				document.cookie = `dailyChallengeDate=${getTodayString()}; SameSite=Lax`;
 
 				invalidateAll().then(async () => {
 					console.log('loaded random items');
 
-					const resp = await data.streamed.tesco;
-					items = resp.items;
-					type = resp.type;
-					loading = false;
-
-					finished = false;
-					index = 0;
+					await resetState();
 				});
 			}}
 		>
@@ -232,11 +236,15 @@
 	img {
 		width: 250px;
 		height: 250px;
+		margin: 20px auto;
 	}
 
 	.name {
 		font-style: italic;
 		text-align: center;
+		max-height: 60px;
+		height: 60px;
+		text-overflow: ellipsis;
 	}
 
 	.guess {
