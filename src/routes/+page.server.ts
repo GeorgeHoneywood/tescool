@@ -2,6 +2,7 @@ import type { Cookies } from '@sveltejs/kit';
 import {
     getTescoPage,
     getTodayString,
+    log,
     randomIntFromInterval,
 } from '../util';
 
@@ -27,7 +28,7 @@ let dataDate = getTodayString(); // doesn't matter, just needs to be any date in
 
 // we have to do this because the tesco api is not CORS enabled,
 // so we have to request it from the server
-export async function load({ cookies }) {
+export async function load({ cookies, getClientAddress }) {
     return { streamed: { tesco: getItems(cookies) }, loadDate: getTodayString() };
 
     async function getItems(cookies: Cookies): Promise<TescoResponse> {
@@ -35,7 +36,7 @@ export async function load({ cookies }) {
         if (cookies.get("dailyChallengeDate") === getTodayString()) {
             const page = randomIntFromInterval(0, MAX_PAGE)
 
-            console.log("daily challenge completed, returning random page", page);
+            log(`returning random page: ${page}`, getClientAddress())
 
             const randomData = await getTescoPage(page);
             const pageSize = randomData.productsByCategory.data.results.pageInformation.pageSize;
@@ -48,12 +49,12 @@ export async function load({ cookies }) {
                 ).slice(start, start + 5) as Item[]
             };
         } else {
-            // otherwise we return the daily challenge items
+            log(`returning daily challenge`, getClientAddress())
             const today = getTodayString();
             const outdated = today !== dataDate
 
             if (dailyData === null || outdated) {
-                console.log("data is outdated, reloading");
+                log("daily data is outdated, reloading", getClientAddress())
 
                 const now = new Date();
                 // FIXME: this is a hack, as we skip some pages if months do not
@@ -68,7 +69,7 @@ export async function load({ cookies }) {
                 // TODO: just use a proper prng instead, with the date as seed, this
                 // will ensure that we don't have this problem
                 const page = approxDayOfYear % 2 === 0 ? wrappedDate : MAX_PAGE - wrappedDate;
-                console.log("loading page", page)
+                log(`loading daily page: ${page}`, getClientAddress())
 
                 dailyData = await getTescoPage(page);
                 dataDate = getTodayString(); // FIXME: some sort of race condition here? (probably not important)

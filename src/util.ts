@@ -48,4 +48,13 @@ async function getTescoPage(page: number): Promise<any> {
     return data
 }
 
-export { getTodayString, getTescoPage, randomIntFromInterval }
+function log(message: string, ip: string) {
+    console.log(`${ip}: ${message}`)
+}
+
+export {
+    getTodayString,
+    getTescoPage,
+    randomIntFromInterval,
+    log,
+}
