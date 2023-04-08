@@ -103,7 +103,11 @@
 		await resetState();
 	});
 
-	async function resetState() {
+	const getImageUrl = (e: Item): string => {
+		return window.devicePixelRatio === 1 ? e.x1ImageUrl : e.x2ImageUrl;
+	};
+
+	const resetState = async () => {
 		const resp = await data.streamed.tesco;
 		items = resp.items;
 		type = resp.type;
@@ -118,9 +122,9 @@
 
 		// precache images
 		items.forEach((e) => {
-			new Image().src = e.defaultImageUrl;
+			new Image().src = getImageUrl(e);
 		});
-	}
+	};
 </script>
 
 <main>
@@ -137,7 +141,7 @@
 
 		{#key items[index]}
 			<div class="item-box" transition:slide|local>
-				<img src={items[index].defaultImageUrl} alt="Image of {items[index].title}" />
+				<img src={getImageUrl(items[index])} alt="Image of {items[index].title}" />
 
 				<span class="name">{items[index].title}</span>
 			</div>
@@ -146,22 +150,25 @@
 		<div class="guess">
 			<span>
 				<span>£</span>
-				<input
-					class="guess-input"
-					type="number"
-					min="0.00"
-					max="10000.00"
-					step="0.01"
-					placeholder="1.34"
-					autocomplete="beans"
-					bind:value={guess}
-					on:keypress={(e) => {
-						if (e.key === 'Enter') {
-							!submitted ? checkGuess() : next();
-						}
-					}}
-					use:focus
-				/>
+				<!-- key this so that autofocus works properly -->
+				{#key items[index]}
+					<input
+						class="guess-input"
+						type="number"
+						min="0.00"
+						max="10000.00"
+						step="0.01"
+						placeholder="1.34"
+						autocomplete="no"
+						bind:value={guess}
+						on:keypress={(e) => {
+							if (e.key === 'Enter') {
+								!submitted ? checkGuess() : next();
+							}
+						}}
+						use:focus
+					/>
+				{/key}
 			</span>
 
 			{#if !submitted}
@@ -229,7 +236,7 @@
 	p {
 		text-align: center;
 	}
-	
+
 	h1 {
 		margin: 10px 10px;
 	}

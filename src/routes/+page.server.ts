@@ -4,13 +4,9 @@ import {
     getTodayString,
     log,
     randomIntFromInterval,
+    addImageUrls,
+    type Item,
 } from '../util';
-
-export type Item = {
-    title: string;
-    price: number;
-    defaultImageUrl: string;
-}
 
 type TescoResponse = {
     items: Item[];
@@ -44,9 +40,7 @@ export async function load({ cookies, getClientAddress }) {
 
             return {
                 type: "random",
-                items: randomData.productsByCategory.data.results.productItems.map(
-                    (e: any) => e.product
-                ).slice(start, start + 5) as Item[]
+                items: addImageUrls(randomData).slice(start, start + 5)
             };
         } else {
             log(`returning daily challenge`, getClientAddress())
@@ -77,9 +71,7 @@ export async function load({ cookies, getClientAddress }) {
 
             return {
                 type: "daily",
-                items: dailyData.productsByCategory.data.results.productItems.map(
-                    (e: any) => e.product
-                ).slice(0, 5) as Item[]
+                items: addImageUrls(dailyData).slice(0, 5)
             };
         }
     }

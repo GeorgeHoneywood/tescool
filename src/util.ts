@@ -1,4 +1,10 @@
 import { error } from "@sveltejs/kit";
+export type Item = {
+    title: string;
+    price: number;
+    defaultImageUrl: string;
+    x2ImageUrl: string;
+}
 
 // should return something like 2023-04-08
 const getTodayString = () => {
@@ -48,6 +54,27 @@ async function getTescoPage(page: number): Promise<any> {
     return data
 }
 
+function addImageUrls(data: any): Item[] {
+    return data.productsByCategory.data.results.productItems.map(
+        (e: any) => {
+            const x1ImageUrl = new URL(e.product.defaultImageUrl)
+            x1ImageUrl.searchParams.set("h", "250")
+            x1ImageUrl.searchParams.set("w", "250")
+
+            const x2ImageUrl = new URL(e.product.defaultImageUrl)
+            x2ImageUrl.searchParams.set("h", "500")
+            x2ImageUrl.searchParams.set("w", "500")
+
+            return {
+                ...e.product,
+                x1ImageUrl: x1ImageUrl.toString(),
+                x2ImageUrl: x2ImageUrl.toString(),
+            }
+        }
+    ) as Item[]
+}
+
+
 function log(message: string, ip: string) {
     console.log(`${ip}: ${message}`)
 }
@@ -57,4 +84,5 @@ export {
     getTescoPage,
     randomIntFromInterval,
     log,
+    addImageUrls,
 }
