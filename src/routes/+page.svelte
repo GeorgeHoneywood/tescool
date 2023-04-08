@@ -116,6 +116,11 @@
 		score = 0;
 		guess = null;
 		newHighscore = false;
+
+		// precache images
+		items.forEach((e) => {
+			new Image().src = e.defaultImageUrl;
+		});
 	}
 </script>
 
