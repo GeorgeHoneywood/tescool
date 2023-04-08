@@ -114,6 +114,7 @@
 		submitted = false;
 		index = 0;
 		score = 0;
+		guess = null;
 		newHighscore = false;
 	}
 </script>
