@@ -52,7 +52,7 @@
 	};
 
 	const focus = (el: HTMLElement) => {
-		el.focus();
+		el.focus({ preventScroll: true });
 	};
 
 	const next = () => {
