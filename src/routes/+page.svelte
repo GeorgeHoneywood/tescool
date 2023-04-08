@@ -172,9 +172,9 @@
 			</span>
 
 			{#if !submitted}
-				<button on:click={() => checkGuess()} disabled={!guess}>Submit</button>
+				<button class="guess-button" on:click={() => checkGuess()} disabled={!guess}>Submit</button>
 			{:else}
-				<button on:click={() => next()}>Next</button>
+				<button class="guess-button" on:click={() => next()}>Next</button>
 			{/if}
 		</div>
 
@@ -280,7 +280,7 @@
 	}
 
 	.guess-input {
-		max-width: 100px;
+		width: 85px;
 		font-size: inherit;
 	}
 
@@ -311,5 +311,9 @@
 
 	.new-game {
 		margin: 15px;
+	}
+
+	.guess-button {
+		min-width: 100px;
 	}
 </style>
