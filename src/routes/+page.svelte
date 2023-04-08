@@ -82,7 +82,6 @@
 			newDayChecker = setInterval(() => {
 				const challengeDate = localStorage.getItem('dailyChallengeDate');
 
-				console.log('check!');
 				if (data.loadDate !== getTodayString()) {
 					console.log('the date has changed');
 					loading = true;
@@ -154,6 +153,7 @@
 					max="10000.00"
 					step="0.01"
 					placeholder="1.34"
+					autocomplete="beans"
 					bind:value={guess}
 					on:keypress={(e) => {
 						if (e.key === 'Enter') {
@@ -229,6 +229,10 @@
 	p {
 		text-align: center;
 	}
+	
+	h1 {
+		margin: 10px 10px;
+	}
 
 	.item-box {
 		display: flex;
@@ -245,15 +249,20 @@
 	img {
 		width: 250px;
 		height: 250px;
-		margin: 20px auto;
+		margin: 10px auto;
 	}
 
 	.name {
 		font-style: italic;
 		text-align: center;
-		max-height: 60px;
 		height: 60px;
+		overflow: hidden;
 		text-overflow: ellipsis;
+		margin: auto 20px;
+
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 
 	.guess {
@@ -287,13 +296,13 @@
 	}
 
 	.actual {
-		margin: 20px;
+		margin: 10px;
 		text-align: center;
 		display: flex;
 		flex-direction: column;
 	}
 
 	.new-game {
-		margin-top: 15px;
+		margin: 15px;
 	}
 </style>
