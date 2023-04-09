@@ -3,19 +3,22 @@
 	import type { Item } from './+page.server';
 	import { onMount } from 'svelte';
 	import Spinner from '../components/Spinner.svelte';
+	import { invalidateAll } from '$app/navigation';
+	import { getTodayString } from '../util';
 
 	export let data: PageData;
 
 	let loading = true;
 	let items: Item[] | null = null;
 	let index = 0;
+	let type = '';
 
 	let guess: number | null = null;
 	let submitted = false;
 	let finished = false;
 
 	let score = 0;
-    let newHighscore = false;
+	let newHighscore = false;
 
 	let percentOff = 0;
 	let roundBracket = { text: '', color: 'black' };
@@ -25,7 +28,7 @@
 		15: { text: 'Close!', color: 'blue' },
 		25: { text: 'Not bad!', color: 'orange' },
 		50: { text: 'Not too far off!', color: 'orange' },
-		Infinity: { text: "Disgraceful!", color: 'red' }
+		Infinity: { text: 'Disgraceful!', color: 'red' }
 	};
 
 	const checkGuess = () => {
@@ -34,9 +37,11 @@
 		}
 		submitted = true;
 		percentOff = Math.abs(((guess - items[index].price) / items[index].price) * 100);
-		let key = Object.keys(roundBrackets).find((e) => {
-			return percentOff < +e;
-		});
+		let key = Object.keys(roundBrackets)
+			.sort()
+			.find((e) => {
+				return percentOff < +e;
+			});
 
 		roundBracket = roundBrackets[+(key ?? Infinity)];
 
@@ -56,11 +61,42 @@
 		if (index >= items.length) {
 			finished = true;
 
-            // do highscore stuff here
-            if (localStorage.getItem('highscore') === null || score > +localStorage.getItem('highscore')!){
-                localStorage.setItem('highscore', score.toFixed(0));
-                newHighscore = true;
-            }
+			// if daily challenge
+			if (type === 'daily') {
+				localStorage.setItem('dailyChallengeDate', getTodayString());
+			}
+
+			// do highscore stuff here
+			if (
+				localStorage.getItem('highscore') === null ||
+				score > +localStorage.getItem('highscore')!
+			) {
+				localStorage.setItem('highscore', score.toFixed(0));
+				newHighscore = true;
+			}
+
+			// check if there is a new daily challenge every 2 seconds
+			setInterval(() => {
+				const challengeDate = localStorage.getItem('dailyChallengeDate');
+				console.log('challengeDate', challengeDate);
+
+				if (data.loadDate !== getTodayString()) {
+					console.log('the date has changed');
+					loading = true;
+					invalidateAll().then(async () => {
+						console.log('loaded new daily challenge');
+
+						const resp = await data.streamed.tesco;
+						items = resp.items;
+						type = resp.type;
+						loading = false;
+
+						finished = false;
+						index = 0;
+					});
+				}
+			}, 1000 * 2);
+
 			return;
 		}
 		guess = null;
@@ -68,13 +104,16 @@
 	};
 
 	onMount(async () => {
-		items = await data.streamed.items;
+		const resp = await data.streamed.tesco;
+		items = resp.items;
+		type = resp.type;
+
 		loading = false;
 	});
 </script>
 
 <main>
-	<h1>Tescool!</h1>
+	<h1>Tescool: {type !== '' ? (type === 'daily' ? 'daily' : 'free play') : ''}</h1>
 	{#if loading}
 		<div class="spinner">
 			<Spinner />
@@ -86,7 +125,9 @@
 		</div>
 
 		<div class="item-box">
-			<img src={items[index].defaultImageUrl} alt="Image of {items[index].title}" />
+			{#key items[index]}
+				<img src={items[index].defaultImageUrl} alt="Image of {items[index].title}" />
+			{/key}
 			<span class="name">{items[index].title}</span>
 		</div>
 
@@ -118,23 +159,46 @@
 		</div>
 
 		{#if submitted}
-		<div class="actual" style="color: {submitted ? roundBracket.color : 'black'}">
-			<span>Actual price: £{items[index].price.toFixed(2)} &mdash; {percentOff.toFixed(0)}% off</span>
+			<div class="actual" style="color: {submitted ? roundBracket.color : 'black'}">
+				<span
+					>Actual price: £{items[index].price.toFixed(2)} &mdash; {percentOff.toFixed(0)}% off</span
+				>
 
-			<span>{roundBracket.text}</span>
-		</div>
-	{/if}
+				<span>{roundBracket.text}</span>
+			</div>
+		{/if}
 	{:else}
 		<h2>Game complete!</h2>
 		<p>You scored {score.toFixed(0)}/5000</p>
-        
-        {#if newHighscore}
-            <p>New highscore!</p>
-        {:else}
-            <p>Highscore: {localStorage.getItem('highscore') ?? 0}</p>
-        {/if}
 
-		<button on:click={() => window.location.reload()}>Play again!</button>
+		{#if newHighscore}
+			<p>New highscore!</p>
+		{:else}
+			<p>Highscore: {localStorage.getItem('highscore') ?? 0}</p>
+		{/if}
+
+		<button
+			use:focus
+			disabled={loading}
+			on:click={() => {
+				loading = true;
+				document.cookie = `dailyChallengeDate=${getTodayString()};`;
+
+				invalidateAll().then(async () => {
+					console.log('loaded random items');
+
+					const resp = await data.streamed.tesco;
+					items = resp.items;
+					type = resp.type;
+					loading = false;
+
+					finished = false;
+					index = 0;
+				});
+			}}
+		>
+			Play random game!
+		</button>
 	{/if}
 </main>
 
@@ -147,7 +211,9 @@
 		height: 100%;
 	}
 
-	h1, h2, p {
+	h1,
+	h2,
+	p {
 		text-align: center;
 	}
 
