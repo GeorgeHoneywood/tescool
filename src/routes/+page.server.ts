@@ -20,7 +20,12 @@ const MAX_PAGE = 150; // assuming 150 pages at least (there are currently ~250)
 // workers, maybe we should use the cache api instead?
 // this would have the bonus of being transparent to the calling code
 let dailyData: any = null;
+let dailyDataPromise: Promise<any> | null = null;
 let dataDate = "1970-1-1" // doesn't matter, just needs to be any date initially
+
+let randomData: any = null;
+let randomDataPromise: Promise<any> | null = null;
+let randomDataTime: number | null = null;
 
 // we have to do this because the tesco api is not CORS enabled,
 // so we have to request it from the server
@@ -36,14 +41,27 @@ export async function load({ cookies, getClientAddress, request }) {
     async function getItems(cookies: Cookies, timeZone: string): Promise<TescoResponse> {
         // if the daily challenge for today has been completed, we can return random items
         if (cookies.get("dailyChallengeDate") === getLocalTodayString(timeZone)) {
-            const page = randomIntFromInterval(0, MAX_PAGE)
+            log(`returning random page`, getClientAddress())
 
-            log(`returning random page: ${page}`, getClientAddress())
+            // wait for any inflight requests to finish
+            await randomDataPromise;
 
-            const randomData = await getTescoPage(page);
+            // if we don't have any data, or, data is too old
+            if (!randomData || !randomDataTime || ((Date.now() - randomDataTime) > (15 * 1000))) {
+                const page = randomIntFromInterval(0, MAX_PAGE)
+
+                log(`fetching random page: ${page}`, getClientAddress())
+
+                randomDataPromise = getTescoPage(page, getClientAddress());
+
+                randomDataTime = Date.now()
+                randomData = await randomDataPromise;
+            } else {
+                log(`reusing random data from ${(Date.now() - randomDataTime) / 1000}s ago`, getClientAddress())
+            }
+
             const pageSize = randomData.productsByCategory.data.results.pageInformation.pageSize;
             const start = randomIntFromInterval(0, pageSize - 6)
-
             return {
                 type: "random",
                 items: addImageUrls(randomData).slice(start, start + 5)
@@ -52,6 +70,9 @@ export async function load({ cookies, getClientAddress, request }) {
             log(`returning daily challenge`, getClientAddress())
             const today = getLocalTodayString(timeZone);
             const outdated = today !== dataDate
+
+            // if we are already fetching, just wait
+            await dailyDataPromise;
 
             if (dailyData === null || outdated) {
                 log(`daily data is outdated, reloading (date was: ${dataDate}, now is ${today})`, getClientAddress())
@@ -71,7 +92,8 @@ export async function load({ cookies, getClientAddress, request }) {
                 const page = approxDayOfYear % 2 === 0 ? wrappedDate : MAX_PAGE - wrappedDate;
                 log(`loading daily page: ${page}`, getClientAddress())
 
-                dailyData = await getTescoPage(page);
+                dailyDataPromise = getTescoPage(page, getClientAddress());
+                dailyData = await dailyDataPromise;
                 dataDate = getLocalTodayString(timeZone); // FIXME: some sort of race condition here? (probably not important)
             }
 

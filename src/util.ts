@@ -13,7 +13,7 @@ const getLocalTodayString = (timeZone: string | null = null) => {
     if (timeZone) {
         today = new Date(new Date().toLocaleString("en-US", { timeZone: timeZone }));
     }
-    
+
     return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
 };
 
@@ -22,7 +22,8 @@ function randomIntFromInterval(min: number, max: number) { // min and max includ
     return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
-async function getTescoPage(page: number): Promise<any> {
+async function getTescoPage(page: number,clientAddress: string ): Promise<any> {
+    log("making tesco API request", clientAddress)
     const resp = await fetch("https://www.tesco.com/groceries/en-GB/resources", {
         "headers": {
             "Accept": "application/json",
@@ -47,6 +48,7 @@ async function getTescoPage(page: number): Promise<any> {
         }),
         "method": "POST",
     });
+    log("tesco API request finished", clientAddress)
 
     const data = await resp.json();
 
