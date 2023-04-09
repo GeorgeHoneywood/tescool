@@ -3,12 +3,17 @@ export type Item = {
     title: string;
     price: number;
     defaultImageUrl: string;
+    x1ImageUrl: string;
     x2ImageUrl: string;
 }
 
 // should return something like 2023-04-08
-const getTodayString = () => {
-    const today = new Date();
+const getLocalTodayString = (timeZone: string | null = null) => {
+    let today = new Date(new Date().toLocaleString("en-US"));
+    if (timeZone) {
+        today = new Date(new Date().toLocaleString("en-US", { timeZone: timeZone }));
+    }
+    
     return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
 };
 
@@ -80,7 +85,7 @@ function log(message: string, ip: string) {
 }
 
 export {
-    getTodayString,
+    getLocalTodayString,
     getTescoPage,
     randomIntFromInterval,
     log,

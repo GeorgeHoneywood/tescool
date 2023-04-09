@@ -1,7 +1,7 @@
 import type { Cookies } from '@sveltejs/kit';
 import {
     getTescoPage,
-    getTodayString,
+    getLocalTodayString,
     log,
     randomIntFromInterval,
     addImageUrls,
@@ -20,16 +20,22 @@ const MAX_PAGE = 150; // assuming 150 pages at least (there are currently ~250)
 // workers, maybe we should use the cache api instead?
 // this would have the bonus of being transparent to the calling code
 let dailyData: any = null;
-let dataDate = getTodayString(); // doesn't matter, just needs to be any date initially
+let dataDate = "1970-1-1" // doesn't matter, just needs to be any date initially
 
 // we have to do this because the tesco api is not CORS enabled,
 // so we have to request it from the server
-export async function load({ cookies, getClientAddress }) {
-    return { streamed: { tesco: getItems(cookies) }, loadDate: getTodayString() };
+export async function load({ cookies, getClientAddress, request }) {
+    // if request timezone is unavailable, should instead default to server
+    // timezone, which is probably fairly close to the user's timezone (in cf
+    // workers)
+    const timeZone = (request as any).cf?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+    log(`using timezone: ${timeZone}`, getClientAddress())
 
-    async function getItems(cookies: Cookies): Promise<TescoResponse> {
+    return { streamed: { tesco: getItems(cookies, timeZone) }, loadDate: getLocalTodayString(timeZone) };
+
+    async function getItems(cookies: Cookies, timeZone: string): Promise<TescoResponse> {
         // if the daily challenge for today has been completed, we can return random items
-        if (cookies.get("dailyChallengeDate") === getTodayString()) {
+        if (cookies.get("dailyChallengeDate") === getLocalTodayString(timeZone)) {
             const page = randomIntFromInterval(0, MAX_PAGE)
 
             log(`returning random page: ${page}`, getClientAddress())
@@ -44,13 +50,13 @@ export async function load({ cookies, getClientAddress }) {
             };
         } else {
             log(`returning daily challenge`, getClientAddress())
-            const today = getTodayString();
+            const today = getLocalTodayString(timeZone);
             const outdated = today !== dataDate
 
             if (dailyData === null || outdated) {
-                log("daily data is outdated, reloading", getClientAddress())
+                log(`daily data is outdated, reloading (date was: ${dataDate}, now is ${today})`, getClientAddress())
 
-                const now = new Date();
+                const now = new Date(new Date().toLocaleString("en-US", { timeZone: timeZone }))
                 // FIXME: this is a hack, as we skip some pages if months do not
                 // have 31 days
                 const approxDayOfYear = (now.getDate() + now.getMonth()) * 31
@@ -66,7 +72,7 @@ export async function load({ cookies, getClientAddress }) {
                 log(`loading daily page: ${page}`, getClientAddress())
 
                 dailyData = await getTescoPage(page);
-                dataDate = getTodayString(); // FIXME: some sort of race condition here? (probably not important)
+                dataDate = getLocalTodayString(timeZone); // FIXME: some sort of race condition here? (probably not important)
             }
 
             return {

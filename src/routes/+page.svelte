@@ -1,11 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Item } from './+page.server';
 	import { onMount } from 'svelte';
 	import Spinner from '../components/Spinner.svelte';
 	import { invalidateAll } from '$app/navigation';
-	import { getTodayString } from '../util';
-	import { fade, slide } from 'svelte/transition';
+	import { getLocalTodayString, type Item } from '../util';
+	import { slide } from 'svelte/transition';
 
 	export let data: PageData;
 
@@ -66,7 +65,7 @@
 
 			// if daily challenge
 			if (type === 'daily') {
-				localStorage.setItem('dailyChallengeDate', getTodayString());
+				localStorage.setItem('dailyChallengeDate', getLocalTodayString());
 			}
 
 			// do highscore stuff here
@@ -80,9 +79,7 @@
 
 			// check if there is a new daily challenge every 2 seconds
 			newDayChecker = setInterval(() => {
-				const challengeDate = localStorage.getItem('dailyChallengeDate');
-
-				if (data.loadDate !== getTodayString()) {
+				if (data.loadDate !== getLocalTodayString()) {
 					console.log('the date has changed');
 					loading = true;
 					invalidateAll().then(async () => {
@@ -208,7 +205,7 @@
 				}
 
 				loading = true;
-				document.cookie = `dailyChallengeDate=${getTodayString()}; SameSite=Lax`;
+				document.cookie = `dailyChallengeDate=${getLocalTodayString()}; SameSite=Lax`;
 
 				invalidateAll().then(async () => {
 					console.log('loaded random items');
