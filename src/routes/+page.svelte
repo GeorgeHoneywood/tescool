@@ -9,6 +9,7 @@
 	export let data: PageData;
 
 	let loading = true;
+	let error: Error | null = null;
 	let items: Item[] | null = null;
 	let index = 0;
 	let type = '';
@@ -65,7 +66,7 @@
 
 			// if daily challenge
 			if (type === 'daily') {
-				localStorage.setItem('dailyChallengeDate', getLocalTodayString());
+				document.cookie = `dailyChallengeDate=${getLocalTodayString()}; SameSite=Lax`;
 			}
 
 			// do highscore stuff here
@@ -105,22 +106,26 @@
 	};
 
 	const resetState = async () => {
-		const resp = await data.streamed.tesco;
-		items = resp.items;
-		type = resp.type;
-		loading = false;
+		try {
+			const resp = await data.streamed.tesco;
+			items = resp.items;
+			type = resp.type;
+			loading = false;
 
-		finished = false;
-		submitted = false;
-		index = 0;
-		score = 0;
-		guess = null;
-		newHighscore = false;
+			finished = false;
+			submitted = false;
+			index = 0;
+			score = 0;
+			guess = null;
+			newHighscore = false;
 
-		// precache images
-		items.forEach((e) => {
-			new Image().src = getImageUrl(e);
-		});
+			// precache images
+			items.forEach((e) => {
+				new Image().src = getImageUrl(e);
+			});
+		} catch (err) {
+			error = err as Error;
+		}
 	};
 </script>
 
@@ -129,6 +134,11 @@
 	{#if loading}
 		<div class="spinner">
 			<Spinner />
+		</div>
+	{:else if error}
+		<div class="error">
+			<p>Failed to load data, try refreshing!</p>
+			<p>{(error && error.message) ?? 'Unknown error'}</p>
 		</div>
 	{:else if !finished && items}
 		<div class="stats">
@@ -185,7 +195,7 @@
 			</div>
 		{/if}
 	{:else}
-		<h2>Game complete!</h2>
+		<h2>{type === 'daily' ? 'Daily challenge complete' : 'Random game complete'}!</h2>
 		<p>You scored {score.toFixed(0)}/5000</p>
 
 		{#if newHighscore}
@@ -205,7 +215,6 @@
 				}
 
 				loading = true;
-				document.cookie = `dailyChallengeDate=${getLocalTodayString()}; SameSite=Lax`;
 
 				invalidateAll().then(async () => {
 					console.log('loaded random items');
