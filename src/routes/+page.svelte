@@ -19,19 +19,27 @@
 	let finished = false;
 
 	let score = 0;
+	let roundEmoji: string[] = [];
 	let newHighscore = false;
 
 	let percentOff = 0;
-	let roundBracket = { text: '', color: 'black' };
+	let roundBracket: bracket | null = null;
 
 	let newDayChecker = 0;
+	let shared = false;
 
-	const roundBrackets: Record<number, { text: string; color: string }> = {
-		5: { text: 'Dead on!', color: 'green' },
-		15: { text: 'Close!', color: 'blue' },
-		25: { text: 'Not bad!', color: 'orange' },
-		50: { text: 'Not too far off!', color: 'orange' },
-		Infinity: { text: 'Disgraceful!', color: 'red' }
+	type bracket = {
+		text: string;
+		color: string;
+		emoji: string;
+	};
+
+	const roundBrackets: Record<number, bracket> = {
+		5: { text: 'Dead on!', color: 'green', emoji: '🟩' },
+		15: { text: 'Close!', color: 'green', emoji: '🟩' },
+		25: { text: 'Not bad!', color: 'orange', emoji: '🟧' },
+		50: { text: 'Not too far off!', color: 'orange', emoji: '🟧' },
+		Infinity: { text: 'Disgraceful!', color: 'red', emoji: '🟥' }
 	};
 
 	const checkGuess = () => {
@@ -40,15 +48,12 @@
 		}
 		submitted = true;
 		percentOff = Math.abs(((guess - items[index].price) / items[index].price) * 100);
-		let key = Object.keys(roundBrackets)
-			.sort()
-			.find((e) => {
-				return percentOff < +e;
-			});
+		let key = Object.keys(roundBrackets).find((e) => percentOff < +e);
 
 		roundBracket = roundBrackets[+(key ?? Infinity)];
 
 		score += Math.max(100 - percentOff, 0.5) * 10;
+		roundEmoji.push(roundBracket.emoji);
 	};
 
 	const focus = (el: HTMLElement) => {
@@ -118,6 +123,8 @@
 			score = 0;
 			guess = null;
 			newHighscore = false;
+			roundEmoji = [];
+			shared = false;
 
 			// precache images
 			items.forEach((e) => {
@@ -185,12 +192,11 @@
 			{/if}
 		</div>
 
-		{#if submitted}
-			<div class="actual" style="color: {submitted ? roundBracket.color : 'black'}">
+		{#if submitted && roundBracket}
+			<div class="actual" style="color: {roundBracket.color}">
 				<span
 					>Actual price: £{items[index].price.toFixed(2)} &mdash; {percentOff.toFixed(0)}% off</span
 				>
-
 				<span>{roundBracket.text}</span>
 			</div>
 		{/if}
@@ -205,7 +211,7 @@
 		{/if}
 
 		<button
-			class="new-game"
+			class="end-action"
 			use:focus
 			disabled={loading}
 			on:click={() => {
@@ -224,6 +230,43 @@
 			}}
 		>
 			Play random game!
+		</button>
+
+		<button
+			class="end-action"
+			on:click={() => {
+				// TODO: refactor this out to a component
+				const shareData = {
+					text: `#tescool ${score.toFixed(0)}/5000 | ${roundEmoji.join('')} | ${
+						window.location.href
+					}`
+				};
+
+				// @ts-ignore -- navigator.share will not be defined in all browsers
+				let canShare = navigator.share && navigator.canShare && navigator.canShare(shareData);
+				if (canShare) {
+					try {
+						navigator.share(shareData);
+					} catch (err) {
+						console.log('failed to share', err);
+						canShare = false;
+					}
+				}
+
+				if (!canShare) {
+					// fallback to copying to clipboard
+					const el = document.createElement('textarea');
+					el.value = shareData.text;
+					document.body.appendChild(el);
+					el.select();
+					document.execCommand('copy');
+					document.body.removeChild(el);
+				}
+
+				shared = true;
+			}}
+		>
+			Share{shared ? 'd!' : ''}
 		</button>
 	{/if}
 </main>
@@ -315,8 +358,8 @@
 		flex-direction: column;
 	}
 
-	.new-game {
-		margin: 15px;
+	.end-action {
+		margin: 15px 15px 0 15px;
 	}
 
 	.guess-button {
