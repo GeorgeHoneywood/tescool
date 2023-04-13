@@ -204,10 +204,12 @@
 		<h2>{type === 'daily' ? 'Daily challenge complete' : 'Random game complete'}!</h2>
 		<p>You scored {score.toFixed(0)}/5000</p>
 
+		<p class="round-emoji">{roundEmoji.join('')}</p>
+
 		{#if newHighscore}
 			<p>New highscore!</p>
 		{:else}
-			<p>Highscore: {localStorage.getItem('highscore') ?? 0}</p>
+			<p>Your highscore is: {localStorage.getItem('highscore') ?? 0}</p>
 		{/if}
 
 		<button
@@ -364,5 +366,10 @@
 
 	.guess-button {
 		min-width: 100px;
+	}
+
+	.round-emoji {
+		font-size: 1.4rem;
+		letter-spacing: 0.4em;
 	}
 </style>
