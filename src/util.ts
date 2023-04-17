@@ -2,12 +2,11 @@ import { error } from "@sveltejs/kit";
 export type Item = {
     title: string;
     price: number;
-    defaultImageUrl: string;
     x1ImageUrl: string;
     x2ImageUrl: string;
 }
 
-// should return something like 2023-04-08
+// should return something like 2023-4-8
 const getLocalTodayString = (timeZone: string | null = null) => {
     let today = new Date(new Date().toLocaleString("en-US"));
     if (timeZone) {
@@ -22,7 +21,7 @@ function randomIntFromInterval(min: number, max: number) { // min and max includ
     return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
-async function getTescoPage(page: number,clientAddress: string ): Promise<any> {
+async function getTescoItems(page: number, offset: number, clientAddress: string): Promise<Item[]> {
     log("making tesco API request", clientAddress)
     const resp = await fetch("https://www.tesco.com/groceries/en-GB/resources", {
         "headers": {
@@ -50,7 +49,7 @@ async function getTescoPage(page: number,clientAddress: string ): Promise<any> {
     });
     log("tesco API request finished", clientAddress)
 
-    const data = await resp.json();
+    const data = await resp.json() as any;
 
     if (!data.productsByCategory) {
         console.log("failed to load data, instead got: ", data, resp);
@@ -58,10 +57,7 @@ async function getTescoPage(page: number,clientAddress: string ): Promise<any> {
             message: 'could not load data from tesco'
         });
     }
-    return data
-}
 
-function addImageUrls(data: any): Item[] {
     return data.productsByCategory.data.results.productItems.map(
         (e: any) => {
             const x1ImageUrl = new URL(e.product.defaultImageUrl)
@@ -73,14 +69,13 @@ function addImageUrls(data: any): Item[] {
             x2ImageUrl.searchParams.set("w", "500")
 
             return {
-                ...e.product,
+                title: e.product.title,
+                price: e.product.price,
                 x1ImageUrl: x1ImageUrl.toString(),
                 x2ImageUrl: x2ImageUrl.toString(),
             }
-        }
-    ) as Item[]
+        }).slice(offset, offset + 5);
 }
-
 
 function log(message: string, ip: string) {
     console.log(`${ip}: ${message}`)
@@ -88,8 +83,7 @@ function log(message: string, ip: string) {
 
 export {
     getLocalTodayString,
-    getTescoPage,
+    getTescoItems,
     randomIntFromInterval,
     log,
-    addImageUrls,
 }
