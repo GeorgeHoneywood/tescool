@@ -77,7 +77,7 @@ export async function load({ cookies, getClientAddress, request, platform }) {
             await dailyDataCache[today];
 
             if (!dailyDataCache[today]) {
-                log(`daily data is outdated/null, reloading`, getClientAddress())
+                log(`daily data is not locally cached`, getClientAddress())
 
                 // if we have a kv store, try to get the data from there, else fetch it
                 if (kv !== undefined) {
@@ -90,12 +90,12 @@ export async function load({ cookies, getClientAddress, request, platform }) {
                     if (!dailyDataCache[today]) {
                         await getDailyPage(timeZone, getClientAddress, today);
 
-                        log(`saving daily data to kv}`, getClientAddress())
+                        log(`saving daily data to kv`, getClientAddress())
                         // save the data to the kv store, asynchronously
                         kv.put(today, JSON.stringify(dailyDataCache[today]), {
                             expirationTtl: 60 * 60 * 48, // seconds (should expire in 2 days)
                         }).catch((e) => {
-                            console.log("error saving to kv", e);
+                            log(`failed to save daily data to kv: ${e}`, getClientAddress())
                         });
                     }
                 } else {
