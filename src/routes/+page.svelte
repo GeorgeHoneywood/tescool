@@ -52,7 +52,14 @@
 
 		roundBracket = roundBrackets[+(key ?? Infinity)];
 
-		score += Math.max(100 - percentOff, 0.5) * 10;
+		// percentage off is a number between 0 and +Infinity
+		score +=
+			Math.max(
+				100 - percentOff - 50, // only scores below 50% off get points
+				0 // shouldn't be able to score negative points
+			) *
+			2 * // scale back up so that we can get to 5000 points
+			10; // gives us a score out of 5000;
 		roundEmoji.push(roundBracket.emoji);
 	};
 
