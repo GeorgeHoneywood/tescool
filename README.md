@@ -1,38 +1,11 @@
-# create-svelte
+# [Tescool](https://tescool.pages.dev)
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
+Tescool is a little game where you guess the prices of various supermarket items (specifically Tesco). It's become a little harder with the recent inflation.
 
-## Creating a project
+It has a daily challenge mode, where you can share your score with others, and a free play mode.
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Tech
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+Tescool is built with SvelteKit and Vite, and is hosted on Cloudflare Pages. The daily data is fetched on the first request of the day, and is persisted in Cloudflare Workers KV. Free play data is fetched on demand, and is cached for 15 seconds. 
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+Tesco previously had a public API, but it seems to have been shut down at some point — conveniently, their website has an unauthenticated API that can be used for getting product information. Unfortunately, when you fetch a page of products, you _sometimes_ get similar products being listed next to each other (i.e. different flavours of Pringles). This could be worked around with a bit of further effort.
