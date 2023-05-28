@@ -1,8 +1,10 @@
 # [Tescool](https://tescool.pages.dev)
 
-Tescool is a little game where you guess the prices of various supermarket items (specifically Tesco). It's become a little harder with the recent inflation.
+[Tescool](https://tescool.pages.dev) is a little grocery price guessing game, for Tesco items. It's become a little harder with the recent inflation.
 
 It has a daily challenge mode, where you can share your score with others, and a free play mode.
+
+https://github.com/GeorgeHoneywood/tescool/assets/25514836/47dd939d-f7ce-448e-ab4b-77736b355f8d
 
 ## Tech
 
