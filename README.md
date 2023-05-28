@@ -4,7 +4,7 @@
 
 It has a daily challenge mode, where you can share your score with others, and a free play mode.
 
-https://github.com/GeorgeHoneywood/tescool/assets/25514836/47dd939d-f7ce-448e-ab4b-77736b355f8d
+https://github.com/GeorgeHoneywood/tescool/assets/25514836/ee60facd-9b81-4e3d-ba46-0a327359427e
 
 ## Tech
 
